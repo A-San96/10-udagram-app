@@ -30,7 +30,7 @@ resources:
       Properties:
         AttributeDefinitions:
           - AttributeName: id
-            AttributeType: s
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
