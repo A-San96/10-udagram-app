@@ -11,8 +11,15 @@ provider:
 
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
+
   environment:
     GROUPS_TABLE: Group-${self:provider.stage}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action: 
+        - dynamodb:Scan
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.GROUPS_TABLE}
 
 functions:
   GetGroups:
