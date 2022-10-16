@@ -2,4 +2,4 @@
 Serverless App with: 
 - lambda
 - DynamoDB 
-- Serverless framework (v1.43.0)
+- Serverless framework (v1.83.3)
