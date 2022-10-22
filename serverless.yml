@@ -17,6 +17,7 @@ provider:
   environment:
     GROUPS_TABLE: Group-${self:provider.stage}
     IMAGES_TABLE: Image-${self:provider.stage}
+    IMAGE_ID_INDEX: ImageIdIndex
 
   iamRoleStatements:
     - Effect: Allow
@@ -28,7 +29,12 @@ provider:
     - Effect: Allow
       Action: 
         - dynamodb:Query
+        - dynamodb:PutItem
       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}
+    - Effect: Allow
+      Action: 
+        - dynamodb:Query
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}/index/${self:provider.environment.IMAGE_ID_INDEX}
 
 custom:
   documentation:
@@ -41,6 +47,9 @@ custom:
       - name: GroupRequest
         contentType: application/json
         schema: ${file(models/create-group-request.json)}
+      - name: ImageRequest
+        contentType: application/json
+        schema: ${file(models/create-image-request.json)}
   
 
 functions:
@@ -51,6 +60,7 @@ functions:
           method: get
           path: groups
           cors: true
+
   CreateGroup:
     handler: src/lambda/http/createGroup.handler
     events:
@@ -64,6 +74,7 @@ functions:
             description: Create a new group
             requestModels:
               'application/json': GroupRequest
+              
   GetImages:
     handler: src/lambda/http/getImages.handler
     events:
@@ -71,6 +82,29 @@ functions:
           method: get
           path: groups/{groupId}/images
           cors: true
+  
+  CreateImage:
+    handler: src/lambda/http/createImage.handler
+    events:
+      - http:
+          method: post
+          path: groups/{groupId}/images
+          cors: true
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Create a new image
+            description: Create a new image
+            requestModels:
+              'application/json': ImageRequest
+  
+  GetImage:
+    handler: src/lambda/http/getImage.handler
+    events:
+      - http:
+          method: get
+          path: images/{imageId}
+          cors: true
+
 
 resources:
   Resources:
@@ -102,10 +136,19 @@ resources:
             AttributeType: S
           - AttributeName: timestamp
             AttributeType: S
+          - AttributeName: imageId
+            AttributeType: S
         KeySchema:
           - AttributeName: groupId
             KeyType: HASH
           - AttributeName: timestamp
             KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.IMAGE_ID_INDEX}
+            KeySchema:
+              - AttributeName: imageId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.IMAGES_TABLE}
