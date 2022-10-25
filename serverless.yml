@@ -21,6 +21,8 @@ provider:
     CONNECTIONS_TABLE: Connections-ws-${self:provider.stage}
     IMAGES_S3_BUCKET: serverless-udagram-images-107898776944-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
+    THUMBNAILS_S3_BUCKET: serverless-udagram-thumbnail-107898776944-${self:provider.stage}
+
 
   iamRoleStatements:
     - Effect: Allow
@@ -49,6 +51,10 @@ provider:
         - dynamodb:PutItem
         - dynamodb:DeleteItem
       Resource: arn:aws:dynamodb:${opt:regin, self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+      Resource: arn:aws:s3:::${self:provider.environment.THUMBNAILS_S3_BUCKET}/*
 
 custom:
   topicName: imagesTopic-${self:provider.stage}
@@ -155,6 +161,19 @@ functions:
       - stream:
           type: dynamodb
           arn: !GetAtt ImagesDynamoDBTable.StreamArn
+  
+  ResizeImage:
+    handler: src/lambda/s3/resizeImage.handler
+    events:
+      - sns:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn:aws:sns
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.topicName}
+          topicName: ${self:custom.topicName}
 
 resources:
   Resources:
@@ -166,7 +185,12 @@ resources:
           Ref: ApiGatewayRestApi
         ValidateRequestBody: true
         ValidateRequestParameters: false
-    
+
+    ThumbnailsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.THUMBNAILS_S3_BUCKET}
+
     AttachmentsBucket:
       Type: AWS::S3::Bucket
       DependsOn: SNSTopicPolicy
