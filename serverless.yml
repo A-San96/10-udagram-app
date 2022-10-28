@@ -22,7 +22,6 @@ provider:
     IMAGES_S3_BUCKET: serverless-udagram-images-107898776944-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
     THUMBNAILS_S3_BUCKET: serverless-udagram-thumbnail-107898776944-${self:provider.stage}
-    # AUTH_0_SECRET: iYXevBEjVMp6W3EqEpMhAEDOsSotYKKcrn_nGlCfe2a-V24Gv29_ZGgnWB7hrakf
     AUTH_0_SECRET_ID: Auth0Secret-${self:provider.stage}
     AUTH_0_SECRET_FIELD: auth0Secret
 
